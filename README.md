@@ -46,7 +46,7 @@ collapses cleanly at 1180 px, 980 px, 760 px and 560 px breakpoints.
 
 Add the final share links before submitting the hackathon form:
 
-- **Planning video (2 minutes):** _Add planning video link_
+- **Planning video (2 minutes):** https://drive.google.com/file/d/1PxMUoDoXDJUHSHFBLQuDfGQzIpo-Gm9f/view?usp=sharing
 - **Result and product demo (2 minutes):** _Add result video link_
 
 Make sure both links are accessible to reviewers. The result video should clearly distinguish simulated demo mode from the verified local WooCommerce live-sync test.
