@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge, Drawer, SimulatedBadge, Swatch } from './ui'
+import { Badge, Drawer, Icon, SimulatedBadge, Swatch } from './ui'
 import {
   CATEGORIES,
   createAttribute,
@@ -122,21 +122,27 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
       onClose={onCancel}
       footer={
         <>
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          <button type="button" className="btn btn-ghost btn-lg" onClick={onCancel}>
             Cancel
           </button>
-          <button type="submit" form="product-form" className="btn btn-primary">
+          <button type="submit" form="product-form" className="btn btn-primary btn-lg">
+            <Icon name="check" size={15} />
             {product ? 'Save changes' : 'Create product'}
           </button>
         </>
       }
     >
       <form id="product-form" className="form" onSubmit={handleSubmit} noValidate>
+        <p className="form-required-note">
+          Fields marked <span className="req" aria-hidden="true">*</span> are required — everything else is optional.
+        </p>
         <section className="form-section">
           <p className="eyebrow">01 — Identity</p>
           <div className="form-grid">
             <div className="field field-span-2">
-              <label htmlFor="product-name">Name</label>
+              <label htmlFor="product-name">
+                Name <span className="req" aria-hidden="true">*</span>
+              </label>
               <input
                 id="product-name"
                 className="field-input"
@@ -144,6 +150,8 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
                 onChange={(event) => setField('name', event.target.value)}
                 placeholder="Aurora Desk Lamp"
                 autoFocus
+                required
+                aria-required="true"
                 aria-invalid={Boolean(errors.name)}
                 aria-describedby={errors.name ? 'product-name-error' : undefined}
               />
@@ -153,13 +161,17 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
             </div>
 
             <div className="field">
-              <label htmlFor="product-sku">SKU</label>
+              <label htmlFor="product-sku">
+                SKU <span className="req" aria-hidden="true">*</span>
+              </label>
               <input
                 id="product-sku"
                 className="field-input"
                 value={draft.sku}
                 onChange={(event) => setField('sku', event.target.value)}
                 placeholder="KIL-1001"
+                required
+                aria-required="true"
                 aria-invalid={Boolean(errors.sku)}
                 aria-describedby={errors.sku ? 'product-sku-error' : undefined}
               />
@@ -169,12 +181,16 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
             </div>
 
             <div className="field">
-              <label htmlFor="product-category">Category</label>
+              <label htmlFor="product-category">
+                Category <span className="req" aria-hidden="true">*</span>
+              </label>
               <select
                 id="product-category"
                 className="field-input"
                 value={draft.category}
                 onChange={(event) => setField('category', event.target.value)}
+                required
+                aria-required="true"
                 aria-invalid={Boolean(errors.category)}
                 aria-describedby={errors.category ? 'product-category-error' : undefined}
               >
@@ -198,7 +214,9 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
           <p className="eyebrow">02 — Pricing &amp; stock</p>
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="product-price">Price (₹)</label>
+              <label htmlFor="product-price">
+                Price (₹) <span className="req" aria-hidden="true">*</span>
+              </label>
               <input
                 id="product-price"
                 className="field-input"
@@ -206,6 +224,8 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
                 value={draft.price}
                 onChange={(event) => setField('price', event.target.value)}
                 placeholder="0.00"
+                required
+                aria-required="true"
                 aria-invalid={Boolean(errors.price)}
                 aria-describedby={errors.price ? 'product-price-error' : undefined}
               />
@@ -215,7 +235,9 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
             </div>
 
             <div className="field">
-              <label htmlFor="product-stock">Stock</label>
+              <label htmlFor="product-stock">
+                Stock <span className="req" aria-hidden="true">*</span>
+              </label>
               <input
                 id="product-stock"
                 className="field-input"
@@ -223,6 +245,8 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
                 value={draft.stock}
                 onChange={(event) => setField('stock', event.target.value)}
                 placeholder="0"
+                required
+                aria-required="true"
                 aria-invalid={Boolean(errors.stock)}
                 aria-describedby={errors.stock ? 'product-stock-error' : undefined}
               />
@@ -259,9 +283,10 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
                   value={draft.color}
                   onChange={(event) => setField('color', event.target.value)}
                   placeholder="Charcoal"
+                  aria-describedby="product-color-hint"
                 />
               </div>
-              <p className="field-hint">Known colour names render as swatches in the catalog; others fall back to a monogram tile.</p>
+              <p className="field-hint" id="product-color-hint">Known colour names render as swatches in the catalog; others fall back to a monogram tile.</p>
             </div>
 
             <div className="field">
@@ -357,7 +382,7 @@ export default function ProductForm({ product, products, onSave, onCancel, syncM
               {syncMode === 'live' ? <Badge tone="error">Live mode</Badge> : <SimulatedBadge />}
               <p>
                 {product.wooId
-                  ? `${syncMode === 'live' ? 'WooCommerce ID' : 'Demo store ID'} #${product.wooId}`
+                  ? `${product.lastSyncMode === 'live' ? 'WooCommerce ID' : 'Demo store ID'} #${product.wooId}`
                   : 'Not yet synced'}
                 {product.lastSyncedAt
                   ? ` · last run ${new Date(product.lastSyncedAt).toLocaleString()}`

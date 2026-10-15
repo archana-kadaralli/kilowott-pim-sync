@@ -11,6 +11,7 @@ import {
 } from '../src/lib/storage.js'
 
 const PRODUCTS_KEY = 'kilowott-pim-sync/products/v1'
+const SYNC_LOG_KEY = 'kilowott-pim-sync/sync-log/v1'
 const SYNC_MODE_KEY = 'kilowott-pim-sync/sync-mode/v1'
 const LEGACY_SETTINGS_KEY = 'kilowott-pim-sync/connection/v1'
 
@@ -173,6 +174,21 @@ test('the sync log drops malformed entries and caps its length', () => {
     const entries = Array.from({ length: 80 }, (_, index) => ({ id: `log_${index}`, outcome: 'success' }))
     saveSyncLog(entries)
     assert.equal(loadSyncLog().length, 50)
+  })
+})
+
+test('loadSyncLog normalizes stored order to newest first', () => {
+  const stored = [
+    { id: 'sim-old', at: '2026-10-15T09:00:00.000Z', outcome: 'success', mode: 'simulated' },
+    { id: 'fail-newest', at: '2026-10-15T12:00:00.000Z', outcome: 'error', mode: 'live' },
+    { id: 'no-timestamp', outcome: 'success', mode: 'live' },
+    { id: 'live-new', at: '2026-10-15T11:00:00.000Z', outcome: 'success', mode: 'live' },
+  ]
+  withBrowserStorage({ [SYNC_LOG_KEY]: JSON.stringify(stored) }, () => {
+    assert.deepEqual(
+      loadSyncLog().map((entry) => entry.id),
+      ['fail-newest', 'live-new', 'sim-old', 'no-timestamp'],
+    )
   })
 })
 

@@ -92,7 +92,18 @@ export function saveProducts(products) {
 export function loadSyncLog() {
   const log = read(SYNC_LOG_KEY, null)
   if (!Array.isArray(log)) return []
-  return log.filter((entry) => entry && typeof entry === 'object').slice(0, MAX_LOG_ENTRIES)
+  const entries = log.filter((entry) => entry && typeof entry === 'object')
+  entries.sort((a, b) => {
+    const aAt = Date.parse(a.at ?? '')
+    const bAt = Date.parse(b.at ?? '')
+    const aValid = Number.isFinite(aAt)
+    const bValid = Number.isFinite(bAt)
+    if (aValid && bValid) return bAt - aAt
+    if (aValid) return -1
+    if (bValid) return 1
+    return 0
+  })
+  return entries.slice(0, MAX_LOG_ENTRIES)
 }
 
 export function saveSyncLog(log) {

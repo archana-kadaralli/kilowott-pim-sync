@@ -78,6 +78,22 @@ export function Icon({ name, size = 16 }) {
           <path d="m14 7 5 5-5 5" />
         </svg>
       )
+    case 'pencil':
+      return (
+        <svg {...common}>
+          <path d="m4 20 4.2-1L19 8.2 15.8 5 5 15.8 4 20Z" />
+          <path d="m13.8 7 3.2 3.2" />
+        </svg>
+      )
+    case 'trash':
+      return (
+        <svg {...common}>
+          <path d="M4.5 7h15" />
+          <path d="M9.5 7V4.8h5V7" />
+          <path d="m7 7 1 13h8l1-13" />
+          <path d="M10.2 11v5.4M13.8 11v5.4" />
+        </svg>
+      )
     default:
       return null
   }
@@ -141,12 +157,35 @@ export function Swatch({ color = '', name = '', size = 'md' }) {
 }
 
 export function Drawer({ eyebrow, title, subtitle, onClose, children, footer }) {
+  const panelRef = useRef(null)
+
   useEffect(() => {
+    const previouslyFocused = document.activeElement
     function handleKeyDown(event) {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab' || !panelRef.current) return
+      const focusables = Array.from(
+        panelRef.current.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+      ).filter((element) => !element.disabled && element.getClientRects().length > 0)
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus()
+    }
   }, [onClose])
 
   return (
@@ -156,6 +195,7 @@ export function Drawer({ eyebrow, title, subtitle, onClose, children, footer }) 
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        ref={panelRef}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="drawer-head">

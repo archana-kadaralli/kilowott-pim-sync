@@ -2,7 +2,7 @@ export const WOO_SIMULATION_NOTICE =
   'Simulated sync — runs entirely in this browser. No WooCommerce store or API credentials are configured, and no network requests are made.'
 
 export const LIVE_MODE_WARNING =
-  'Live mode sends real REST requests to your store through the local sync proxy. Credentials are read from server-side environment variables (.env.local) and never reach the browser. This path has not been exercised against a real store in this project — verify with a staging store first.'
+  'Live mode sends real REST requests to your store through the local sync proxy. Credentials are read from server-side environment variables (.env.local) and never reach the browser. This path has been verified against a local WooCommerce test store (LocalWP) — it has not been tested against a remote production store, so try a staging store before pointing it at production.'
 
 export const SYNC_MODES = {
   simulated: {
@@ -15,7 +15,7 @@ export const SYNC_MODES = {
   live: {
     id: 'live',
     label: 'Live store',
-    tagline: 'Real REST requests · untested',
+    tagline: 'Real REST requests · local-store verified',
     description:
       'Sends the payload through the local proxy to your configured store (POST to create, PUT to update).',
   },
@@ -74,6 +74,20 @@ export function markSyncError(product, message) {
     syncStatus: 'error',
     syncError: message,
   }
+}
+
+export function latestSuccessfulRun(syncLog = [], mode = null) {
+  let latest = null
+  let latestAt = Number.NEGATIVE_INFINITY
+  for (const entry of Array.isArray(syncLog) ? syncLog : []) {
+    if (!entry || entry.outcome !== 'success') continue
+    if (mode && entry.mode !== mode) continue
+    const at = Date.parse(entry.at ?? '')
+    if (!Number.isFinite(at) || at <= latestAt) continue
+    latest = entry
+    latestAt = at
+  }
+  return latest
 }
 
 function sleep(ms) {
@@ -205,31 +219,74 @@ export async function findProductBySku(sku, { fetchImpl } = {}) {
   return data?.product ?? null
 }
 
+export function validStoreId(value) {
+  return Number.isInteger(value) && value > 0 ? value : null
+}
+
+function verifiedLiveId(product) {
+  if (product?.lastSyncMode !== 'live') return null
+  return validStoreId(product?.wooId)
+}
+
+function isInvalidStoreIdError(error) {
+  const code = String(error?.code ?? '')
+  if (/invalid[ _-]?id/i.test(code) || /product[ _-]?not[ _-]?found/i.test(code)) return true
+  return /invalid id/i.test(String(error?.message ?? ''))
+}
+
+function isSkuConflictError(error) {
+  return (
+    error?.code === 'product_invalid_sku' ||
+    /sku/i.test(String(error?.code ?? '')) ||
+    /sku/i.test(String(error?.message ?? ''))
+  )
+}
+
+async function updateStoreProduct(product, payload, storeId, { fetchImpl }) {
+  const data = await requestLive(`/products/${storeId}`, { method: 'PUT', body: payload, fetchImpl })
+  return markSynced(product, {
+    wooId: validStoreId(data?.product?.id) ?? storeId,
+    syncedAt: new Date().toISOString(),
+    mode: 'live',
+  })
+}
+
+async function createStoreProduct(product, payload, { fetchImpl }) {
+  try {
+    const data = await requestLive('/products', { method: 'POST', body: payload, fetchImpl })
+    const createdId = validStoreId(data?.product?.id)
+    if (!createdId) {
+      throw new Error('The store accepted the request but did not return a product ID.')
+    }
+    return markSynced(product, { wooId: createdId, syncedAt: new Date().toISOString(), mode: 'live' })
+  } catch (error) {
+    if (!isSkuConflictError(error)) throw error
+    const raced = await findProductBySku(product.sku, { fetchImpl }).catch(() => null)
+    const racedId = validStoreId(raced?.id)
+    if (!racedId) throw error
+    return updateStoreProduct(product, payload, racedId, { fetchImpl })
+  }
+}
+
+async function adoptOrCreateStoreProduct(product, payload, { fetchImpl }) {
+  const existing = await findProductBySku(product.sku, { fetchImpl })
+  const existingId = validStoreId(existing?.id)
+  if (existingId) return updateStoreProduct(product, payload, existingId, { fetchImpl })
+  return createStoreProduct(product, payload, { fetchImpl })
+}
+
 export async function pushProductToLiveStore(product, { fetchImpl } = {}) {
   const payload = buildSyncPayload(product)
+  const storeId = verifiedLiveId(product)
+
+  if (!storeId) {
+    return adoptOrCreateStoreProduct(product, payload, { fetchImpl })
+  }
 
   try {
-    const data = product.wooId
-      ? await requestLive(`/products/${product.wooId}`, { method: 'PUT', body: payload, fetchImpl })
-      : await requestLive('/products', { method: 'POST', body: payload, fetchImpl })
-    return markSynced(product, {
-      wooId: data?.product?.id ?? product.wooId ?? null,
-      syncedAt: new Date().toISOString(),
-      mode: 'live',
-    })
+    return await updateStoreProduct(product, payload, storeId, { fetchImpl })
   } catch (error) {
-    const skuConflict =
-      !product.wooId && (error.code === 'product_invalid_sku' || /sku/i.test(error.code ?? '') || /sku/i.test(error.message))
-    if (!skuConflict) throw error
-
-    const existing = await findProductBySku(product.sku, { fetchImpl }).catch(() => null)
-    if (!existing?.id) throw error
-
-    const data = await requestLive(`/products/${existing.id}`, { method: 'PUT', body: payload, fetchImpl })
-    return markSynced(product, {
-      wooId: data?.product?.id ?? existing.id,
-      syncedAt: new Date().toISOString(),
-      mode: 'live',
-    })
+    if (!isInvalidStoreIdError(error)) throw error
+    return adoptOrCreateStoreProduct(product, payload, { fetchImpl })
   }
 }

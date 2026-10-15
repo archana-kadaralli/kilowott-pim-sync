@@ -1,5 +1,11 @@
 import { Badge, EmptyState, SimulatedBadge, Spinner, SyncStatusBadge } from './ui'
-import { LIVE_MODE_WARNING, liveBlockReason, SYNC_MODES, WOO_SIMULATION_NOTICE } from '../lib/woo'
+import {
+  LIVE_MODE_WARNING,
+  latestSuccessfulRun,
+  liveBlockReason,
+  SYNC_MODES,
+  WOO_SIMULATION_NOTICE,
+} from '../lib/woo'
 
 const SYNCED_FIELDS = [
   'Product name and SKU',
@@ -48,9 +54,9 @@ export default function SyncView({
   const queue = products.filter((product) => product.syncStatus !== 'synced')
   const isBusy = syncingIds.length > 0
 
-  const lastSuccess = syncLog.find((entry) => entry.outcome === 'success')
-  const lastDemoSuccess = syncLog.find((entry) => entry.outcome === 'success' && entry.mode !== 'live')
-  const lastLiveSuccess = syncLog.find((entry) => entry.outcome === 'success' && entry.mode === 'live')
+  const lastSuccess = latestSuccessfulRun(syncLog)
+  const lastDemoSuccess = latestSuccessfulRun(syncLog, 'simulated')
+  const lastLiveSuccess = latestSuccessfulRun(syncLog, 'live')
   const demoRuns = syncLog.filter((entry) => entry.mode !== 'live').length
   const liveRuns = syncLog.filter((entry) => entry.mode === 'live').length
 

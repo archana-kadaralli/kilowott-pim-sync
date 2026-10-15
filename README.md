@@ -1,169 +1,128 @@
 # PIM Sync
 
-**PIM Sync** is a Product Information Management prototype built for the **Kilowott Hackathon 2026** using React,
-Vite, Node.js, and the WooCommerce REST API. It brings product data into one workspace and demonstrates a clear
-path from catalog editing to WooCommerce synchronisation.
-
-**Core challenge areas:** product catalog management · attribute handling · data synchronisation
-
-**Project status:** local WooCommerce integration verified · 97 automated tests passing · lint and production build passing.
-Live-store verification was performed on a local test store, not a production store.
+A product information workspace built for the **Kilowott Hackathon 2026**. Manage a product catalog — attributes,
+pricing, stock, status — and keep it in step with a WooCommerce store. React 19 + Vite 8, no database, no
+runtime services to stand up, and **113 passing tests**.
 
 ## Problem
 
-Hackathon brief: manage product information (catalog, attributes, media metadata) and keep it in step with a
-WooCommerce store. Teams need to show a credible sync story without an actual store at hand — and without pretending
-an untested integration works.
+Hackathon brief: build tooling to manage product information and synchronise it with a WooCommerce store. Teams
+need a credible sync story that works without a real store at hand — and that never pretends an untested
+integration works.
 
-## Solution
+## Solution — the three challenge requirements
 
-1. **Product catalog management** — create, view, edit, delete, search and filter products, stored in the browser.
-2. **Attribute handling** — colour, size, material, category, SKU, description, price, stock, plus free-form attributes (e.g. Finish, Ports) with comma-separated values.
-3. **Data synchronisation** — per-product and bulk sync actions with plain-English statuses ("Synced", "Needs sync", "Sync failed"), timestamps, and an explicit distinction between **simulated demo mode** and a **live WooCommerce REST path** that runs through a **server-side proxy** (credentials never touch the browser).
+1. **Product catalog management** — create, view, edit, delete, search and filter products with real validation
+   and `localStorage` persistence. Seeded with the required **Black T-Shirt (TSH-001, ₹499, 20 in stock)** plus
+   five illustrative products.
+2. **Attribute handling** — structured colour / size / material fields plus free-form attribute rows (name +
+   comma-separated values); values are trimmed, empties dropped and duplicates rejected. Colour names resolve to
+   swatches, with a deterministic monogram-tile fallback.
+3. **WooCommerce synchronisation** — per-product and bulk sync with plain-English statuses, timestamps and an
+   activity ledger. Two modes: **Simulated demo** (default; no network requests) and **Live store** (real
+   WooCommerce REST v3 through a server-side proxy, where credentials never touch the browser).
 
-> **Disclosure:** The default connector is **simulated demo mode**
-> (**no network requests**). The live path is unit-tested against mocked transports, was exercised
-> end-to-end against a **local mock WooCommerce API**, and has since been verified against a **real local
-> WooCommerce 11.2.1 test store** (Local by Flywheel) through the server-side proxy — real product
-> create, update and SKU lookup all succeeded. It has never been run against a production or remote
-> store (see [Synchronisation behaviour](#synchronisation-behaviour)).
+> **Honest disclosure:** the live path has been verified against a **local WooCommerce 11.2.1 test store only**
+> (Local by Flywheel) — real product create, update, re-sync and SKU lookup including stale-ID recovery all
+> succeeded. It has **never been run against a production or remote store** — treat the first attempt there as a
+> test, not a production operation.
 
-## Interface
+## Key features
 
-A bold editorial operations workspace: cool porcelain canvas, dense ink typography and a single cobalt accent, set
-in Space Grotesk (display), Inter (UI) and IBM Plex Mono (data) with system fallbacks. There is **no sidebar** — a
-compact top chrome carries the brand mark, two workspace tabs with live counts and the theme toggle. The catalog
-opens on an asymmetric masthead (oversized uppercase title beside a giant numeric index and a hairline statistics
-grid), a sticky toolbar, then a manifest-style table with row numerals, colour swatches, labelled attribute chips
-and clear row actions. Delete opens an in-app confirmation dialog (Escape or overlay cancels, the safe option is
-focused first). The synchronize workspace pairs connection mode cards, key/value connection facts, a numbered
-"what gets synchronized" field list, a queue and a run ledger. A full **light/dark theme** follows the system
-preference on first visit and remembers any manual choice; an inline pre-paint script prevents theme flashes.
-Motion is disabled under `prefers-reduced-motion`; the table scrolls horizontally on narrow screens and the layout
-collapses cleanly at 1180 px, 980 px, 760 px and 560 px breakpoints.
+- **Product Catalog** — masthead stats, search across name/SKU/colour/size/material/category/description/
+  attributes, category and sync filters, a manifest table with row numerals, swatches, attribute chips, price in
+  ₹, stock with low-stock marks and per-row Sync / Edit / Delete actions (delete asks for confirmation).
+  On narrow screens the table becomes stacked cards.
+- **Create / edit drawer** — numbered sections, inline validation, focus moved to the first invalid field.
+- **Synchronize page** — connection mode cards, a Connection panel covering four server states (checking /
+  unreachable / unconfigured / configured) with the exact missing environment variables and copy-ready setup
+  steps, a genuinely re-fetching **Check again** button, a queue with a "fail the next run" toggle for the
+  error/retry flow (demo mode), and an activity ledger where every entry is tagged `Simulated demo` or
+  `Live store` (newest first, with separate per-mode totals). The last-success summary always shows the most
+  recent successful run by timestamp — a failed run never replaces it.
+- **Light & dark theme** — follows the system preference until toggled; applied pre-paint with no flash, choice
+  remembered in `localStorage`.
+- **Security** — WooCommerce credentials live only in server-side environment variables. The proxy requires a
+  session cookie and same-origin checks (plus an `X-PIM-Sync` header on writes), rejects cross-origin calls and
+  preflights with 403, enforces HTTPS for remote stores and maps failures to safe error codes. Legacy
+  credentials stored by older builds are purged on startup.
+- **Storage hardening** — malformed `localStorage` data is repaired or dropped on load; the sync log is capped
+  at 50 entries and normalised to newest-first.
 
-## Hackathon videos
+## Tech stack
 
-Add the final share links before submitting the hackathon form:
-
-- **Planning video (2 minutes):** https://drive.google.com/file/d/1PxMUoDoXDJUHSHFBLQuDfGQzIpo-Gm9f/view?usp=sharing
-- **Result and product demo (2 minutes):** _Add result video link_
-
-Make sure both links are accessible to reviewers. The result video should clearly distinguish simulated demo mode from the verified local WooCommerce live-sync test.
-
-## Features
-
-- **Product Catalog (first screen)** — masthead totals (products, published, synced, need sync, low stock, last sync time), search across name/SKU/colour/size/material/category/description/attributes, filters (category, sync status), and a readable manifest table: row numerals, labelled attribute chips, category, price in ₹, stock with low-stock mark, store status, sync status with last-sync time and error message, plus **Sync**, **Edit** and **Delete** actions (Delete opens an in-app confirmation dialog).
-- **Light & dark theme** — follows `prefers-color-scheme` until the user flips the toggle in the top chrome; the choice is remembered in `localStorage` and applied pre-paint by an inline script (no flash). Native controls follow the theme via `color-scheme`.
-- **Add / Edit Product** — a prominent "Add Product" button opens a side drawer with numbered sections and inline validation; focus moves to the first invalid field; Escape or the overlay closes it.
-- **Attribute handling** — structured colour/size/material fields plus repeatable custom attributes; values are trimmed, empties dropped and duplicates rejected. Colour names resolve to swatches, with a deterministic monogram-tile fallback.
-- **Synchronize page** — connection mode (simulated vs live), a Connection panel with four explicit server states (checking / unreachable / unconfigured / configured), the exact missing environment variables, copy-ready setup commands, a required-restart note and a **Check again** button that genuinely re-fetches the server status; run actions (queue or entire catalog) stay disabled in live mode with plain-English reasons until the server reports a valid configuration; "What gets synchronized" field list, per-product queue, a "fail the next run" toggle for the error/retry flow (demo mode), and an activity ledger where every entry is tagged "Simulated demo" or "Live store" and the totals count each mode separately.
-- **Persistence** — products, sync log and sync mode live in `localStorage`; legacy records are hydrated and malformed values repaired on load (see [Storage hardening](#storage-hardening)). If an older version stored credentials in the browser, they are purged on startup.
-
-## Synchronisation behaviour
-
-| | Simulated demo (default) | Live store (verified against a local test store) |
-| --- | --- | --- |
-| Network | none — local only | browser → local proxy (`/api/woo/*`) → store REST API |
-| Auth | n/a | HTTP Basic added **server-side** from `WOO_CONSUMER_KEY`/`WOO_CONSUMER_SECRET` env vars |
-| Credentials in browser | none | none — the client only sees `{ configured, storeHost, missing, urlError, insecureLocal }` |
-| Proxy guard | n/a | session cookie + same-origin check + `X-PIM-Sync` header on writes; cross-origin/preflight → 403 |
-| Create vs update | n/a (deterministic demo ID from SKU) | POST `/wp-json/wc/v3/products` to create; PUT `/wp-json/wc/v3/products/{id}` to update |
-| SKU handling | n/a | on a `product_invalid_sku` conflict, the proxy looks the SKU up and updates the existing store product instead |
-| Category handling | n/a | WooCommerce ignores name-only categories on writes, so the proxy resolves each named category to a term (by slug, creating it if missing) and writes term ids |
-| Stock handling | n/a | payload includes `manage_stock: true` with `stock_quantity`, because WooCommerce ignores stock quantities when stock management is off |
-| Verified how | unit tests + UI flows | unit tests with mocked fetch; middleware tests; **15/15 end-to-end checks against a local mock WooCommerce API**; a real local WooCommerce 11.2.1 store: create (id 13, draft, ₹1234.00, stock 7, category + attribute mapped), update (name/price ₹1499.00/stock 9), SKU lookup — all through the real dev proxy; never a production or remote store |
-
-- Every log entry is tagged `Simulated demo` or `Live store`, so recorded history is never ambiguous; the ledger header and panels also count demo vs live runs separately.
-- In live mode, run buttons are disabled until the proxy reports `configured: true`, with plain-English reasons on hover/inline; if the proxy is unreachable, the UI says so (and distinguishes it from missing configuration) and suggests `npm run dev` / `npm run preview` / `npm start`, plus a **Check again** button.
-- A blocked live attempt never writes a success entry to the ledger, so demo runs can never be mistaken for real-store runs.
-- Live sync has been run against a **local WooCommerce test store only** — never a production or remote store. The real-store pass proves the request shape, authentication header, create/update routing, SKU-conflict fallback, category resolution and error passthrough against WooCommerce 11.2.1; it does not prove compatibility with every host, plugin set or custom-field setup. Test against a staging store before trusting live mode.
-
-## Security
-
-- **Credentials stay server-side.** `WOO_STORE_URL`, `WOO_CONSUMER_KEY` and `WOO_CONSUMER_SECRET` are read from environment variables by the sync proxy (Vite dev/preview middleware or the standalone `npm start` server); they are never sent to, or stored in, the browser.
-- `.env` and `.env.*` are gitignored (`.env.example` is the template); the proxy never echoes credentials — `/api/woo/status` returns only `configured`, the store host, which variables are missing and URL diagnostics.
-- **The proxy is not an open relay.** `GET /api/woo/status` issues a short-lived `HttpOnly`, `SameSite=Strict` session cookie; every product route then requires that cookie, a same-origin `Origin` header and — for writes — an `X-PIM-Sync: 1` header. Cross-origin requests and preflights (`OPTIONS`) are rejected with 403, so a random web page cannot drive your store. No secret is ever needed by (or exposed to) the client for this.
-- **HTTPS enforced.** Remote store URLs must be `https://`; plain HTTP is accepted only for local-development hosts — `localhost`/`127.0.0.1`/`::1` (and any 127.x.x.x), `*.localhost`, `*.local` and `*.test` reserved names, or private-network IPs (10.x, 172.16–31.x, 192.168.x) — and only with the explicit `WOO_ALLOW_LOCAL_HTTP=1` local-development flag (the UI badges this as "Local HTTP (dev only)"). Note: WooCommerce 8+ only performs Basic authentication over SSL, so even local stores should be configured with their HTTPS URL (e.g. `https://my-site.local`); across plain HTTP the store silently falls back to legacy OAuth and rejects every authenticated request with `woocommerce_rest_cannot_view`.
-- **Safe failure messages.** Missing/invalid configuration → 503 with the exact problem; store timeouts → 504 `proxy_timeout`; network failure → 502; auth misses → 401 `proxy_unauthorized`; cross-origin → 403 `proxy_forbidden`.
-- The proxy only exposes `GET /api/woo/status`, `GET /api/woo/products?sku=…`, `POST /api/woo/products` and `PUT /api/woo/products/{id}`; request bodies are capped at 1 MB; unknown routes return 404; upstream calls time out after 15 s.
-- Legacy: earlier versions accepted credentials via a browser form and stored them in `localStorage`. That form is gone and `purgeLegacyConnectionSettings()` removes any leftover values on startup.
+- **React 19** + **Vite 8** — hand-built design system in plain CSS, no UI framework
+- **Node ≥ 22.15** — the sync proxy runs as Vite dev/preview middleware and as a dependency-free standalone
+  server (`npm start`); scripts run with `--use-system-ca` so locally-trusted development certificates work
+- **node:test** — 113 tests with zero test dependencies; **ESLint** flat config
+- Data: browser `localStorage` only
 
 ## Getting started
 
 ```bash
 npm install
-npm run dev       # dev server (also serves the /api/woo proxy); needs Node >= 22.15
+npm run dev       # dev server + /api/woo proxy → http://localhost:5173
 npm run build     # production build
-npm run preview   # serve the production build (also serves the /api/woo proxy)
-npm start         # dependency-free standalone server: serves dist/ + the /api/woo proxy (build first)
-npm run test      # node:test suites (97 tests)
-npm run lint      # eslint
+npm run preview   # serve the production build + proxy
+npm start         # standalone server (run after build): serves dist/ + proxy
+npm test          # 113 tests
+npm run lint
 ```
 
-`dev`, `preview` and `start` run Node with `--use-system-ca` so that locally-trusted development
-certificates (e.g. Local by Flywheel's router) are accepted without disabling TLS verification.
+First run seeds six products. To start clean, clear the `kilowott-pim-sync/*` keys from localStorage.
 
-Live mode is optional and off until configured. To enable it:
+### Enabling live store mode (optional)
 
 ```powershell
-Copy-Item .env.example .env.local   # cp .env.example .env.local on macOS/Linux
-# edit .env.local: WOO_STORE_URL (store HTTPS URL — WooCommerce requires SSL for Basic auth),
-# WOO_CONSUMER_KEY, WOO_CONSUMER_SECRET
-npm run dev                         # env files are read at startup — always restart after editing
+Copy-Item .env.example .env.local   # cp on macOS/Linux
+# edit .env.local:
+#   WOO_STORE_URL=https://your-store.example   (HTTPS required for remote stores)
+#   WOO_CONSUMER_KEY=ck_…
+#   WOO_CONSUMER_SECRET=cs_…
+npm run dev                         # env files are read at startup — restart after editing
 ```
 
-Then open the Synchronize page → the Connection panel shows exactly which variables are missing, the exact
-setup steps and a **Check again** button that re-reads the live server status. Run buttons stay disabled until
-the server reports `configured: true`. Environment variables: `WOO_STORE_URL` (HTTPS; plain HTTP is accepted
-only for local-development hosts — `localhost`, `*.local`, `*.test` or private-network IPs — and only when
-`WOO_ALLOW_LOCAL_HTTP=1`), `WOO_CONSUMER_KEY`,
-`WOO_CONSUMER_SECRET` (WooCommerce → Settings → Advanced → REST API), and `PORT` for `npm start` (default
-4173). Existing `process.env` values win over `.env`/`.env.local`.
-
-First run loads six seed products (including the required **Black T-Shirt, TSH-001, ₹499, 20 in stock**).
-To start clean, clear the `kilowott-pim-sync/*` keys from localStorage.
-
-## Validation rules
-
-| Field | Rule |
-| --- | --- |
-| Name | required, ≥ 2 characters |
-| SKU | required, unique across the catalog (case-insensitive), trimmed |
-| Category | required (select from a list plus "Uncategorized") |
-| Price | required, numeric, ≥ 0 (₹) |
-| Stock | required, whole number, ≥ 0 |
-| Colour / Size / Material | optional free text; trimmed |
-| Custom attributes | each row needs a name and ≥ 1 value; names unique (case-insensitive) |
-
-## Storage hardening
-
-`loadProducts` / `loadSyncLog` defend against malformed `localStorage` data: non-array payloads and corrupted JSON
-fall back to seeds/empty; non-object records are dropped; unknown enum values (`status`, `syncStatus`) reset to
-safe defaults; negative or non-numeric price/stock clamp to 0; malformed attribute rows are repaired or dropped;
-the sync log is capped at 50 entries. All of this is covered by tests.
+Keys come from WooCommerce → Settings → Advanced → REST API (Read/Write). Then open **Synchronize** →
+**Live store** → **Check again**; the panel should show `Configured · <store host>` with credentials "Held
+server-side". **Try a staging store first** and watch the ledger. For a local development store, use its HTTPS
+URL — WooCommerce 8+ only performs Basic auth over SSL — and if every request returns
+`woocommerce_rest_cannot_view`, make sure your web server forwards the `Authorization` header to PHP
+(nginx sites may need `fastcgi_param HTTP_AUTHORIZATION $http_authorization;`).
 
 ## Architecture
 
 ```
 server/
-  index.mjs                standalone server for `npm start`: serves dist/ + the proxy (loads .env/.env.local)
-  woo-api.mjs              sync proxy (config validation, session-cookie/origin guards, WooCommerce client) for dev + preview + start
+  index.mjs                standalone server for `npm start` (serves dist/ + proxy, loads .env/.env.local)
+  woo-api.mjs              sync proxy: config validation, session-cookie/origin guards, WooCommerce client
 src/
   App.jsx                  shell, state, persistence, sync orchestration, theme, toasts
   index.css                design system (light/dark tokens, layout, components)
   lib/
     products.js            model, seeds, validation, search, stats, swatches, ₹ formatting
-    storage.js             localStorage read/write, record hydration/hardening, legacy purge
-    theme.js               theme resolution, storage and DOM application helpers
-    woo.js                 payload mapping, simulated connector, client for the sync proxy
+    storage.js             localStorage read/write, record hydration/hardening, log ordering, legacy purge
+    theme.js               theme resolution, storage and DOM application
+    woo.js                 payload mapping, disclosure wording, simulated + live connectors, latest-success selection
   components/
     TopChrome.jsx          brand, workspace tabs with counts, theme toggle
-    ProductsView.jsx       Product Catalog: masthead, toolbar, manifest table, actions
+    ProductsView.jsx       Product Catalog: masthead, toolbar, manifest table/cards, actions
     ProductForm.jsx        create/edit drawer with validation
     SyncView.jsx           mode switch, connection states + setup steps, runs, ledger
     ui.jsx                 icons, brand mark, tags, swatch, drawer, confirm dialog, empty state, spinner
 tests/                     node:test suites (products, storage, theme, woo client, woo proxy)
+```
+
+```mermaid
+flowchart LR
+  UI[Views / Drawer] --> ST[App state]
+  ST --> L[lib/products]
+  ST --> S[lib/storage - localStorage]
+  ST -->|simulated| W1[woo: pushProductToSimulatedStore]
+  ST -->|live| P[client /api/woo/* - session cookie]
+  P --> SV[server/woo-api.mjs - env credentials]
+  SV --> WC[WooCommerce REST v3]
+  W1 --> LOG[activity ledger]
+  SV --> LOG
 ```
 
 Product model:
@@ -183,91 +142,59 @@ Product model:
 }
 ```
 
-```mermaid
-flowchart LR
-  UI[Views / Drawer] --> ST[App state]
-  ST --> L[lib/products]
-  ST --> S[lib/storage - localStorage]
-  ST -->|simulated| W1[woo: pushProductToSimulatedStore]
-  ST -->|live| P[client /api/woo/* - session cookie]
-  P --> SV[server/woo-api.mjs - env credentials]
-  SV --> WC[WooCommerce REST v3]
-  W1 --> LOG[activity ledger]
-  SV --> LOG
-```
-
 ## Testing
 
-`npm run test` (Node's built-in test runner, no extra dependencies): **97 tests, all passing**.
-`npm run lint` is clean and `npm run build` succeeds; the production preview serves 200.
+`npm test` → **113 tests, all passing** · `npm run lint` → clean · `npm run build` → succeeds.
 
-- `tests/products.test.js` — validation (required fields, duplicate SKUs, invalid prices, negative/fractional stock, attribute rules), normalisation, `removeProduct`, search across all attribute fields, filters, stats, seed check for the required Black T-Shirt, ₹ formatting, swatch/monogram helpers, `lastSyncMode` defaults preserved through edits.
-- `tests/storage.test.js` — seed fallback without browser storage, legacy-record hydration, corrupted JSON, malformed records/attributes/log entries, log cap, sync-mode guard, legacy credential purge, `lastSyncMode` repair (valid values kept, unknown values nulled).
-- `tests/theme.test.js` — stored-vs-system preference resolution, toggling, localStorage round-trip, malformed stored values ignored, graceful no-window behaviour, media-query reads, DOM application.
-- `tests/woo.test.js` — disclosure constants, payload mapping (incl. structured attributes, `manage_stock`), simulated success/re-sync/forced failure, live client against a mocked transport (POST create with no credentials in the browser, PUT update, SKU-conflict fallback, error codes/statuses, 401 surfacing, unreachable proxy, status lookup with URL diagnostics, encoded SKU query, `lastSyncMode` tagging, `liveBlockReason` states).
-- `tests/woo-api.test.js` — config parsing incl. HTTPS enforcement and the local-HTTP flag, secret-free public status, session-cookie issuance, 401 without cookie, 403 cross-origin, OPTIONS rejection, `X-PIM-Sync` write guard, Basic auth added server-side, payload/query forwarding, category resolution (create missing terms, reuse by slug, pass ids through, safe failure passthrough), store error mapping, 504 timeout and 502 network mappings, unconfigured refusal, middleware routing, sku normalisation, invalid JSON, oversized bodies, 404s.
+- `tests/products.test.js` — validation (required fields, unique SKUs, invalid prices/stock, attribute rules),
+  normalisation, search, filters, stats, seed check (required Black T-Shirt), ₹ formatting, swatch helpers.
+- `tests/storage.test.js` — seed fallback, legacy-record hydration, corrupted JSON, malformed record repair,
+  log cap + newest-first normalisation, sync-mode guard, legacy credential purge.
+- `tests/theme.test.js` — preference resolution, toggling, malformed stored values, no-window degradation.
+- `tests/woo.test.js` — disclosure wording, payload mapping (`manage_stock`, structured attributes), simulated
+  connectors, live client against a mocked transport: SKU-first adopt-or-create, stale-ID recovery, demo IDs
+  never reused as live IDs, error mapping, `latestSuccessfulRun` selection across mixed/malformed history.
+- `tests/woo-api.test.js` — config/HTTPS rules, secret-free status, session-cookie/origin/write guards,
+  category resolution, error mapping, body caps, routing.
 
-Beyond unit tests:
+Beyond unit tests (all executed; results recorded here):
 
-- The live path was exercised end-to-end against a **local mock WooCommerce API** (a temporary Node script, not shipped) through the real Vite dev proxy: **15/15 checks passed** — status proves configured without leaking credentials, `HttpOnly`/`SameSite=Strict` cookie issuance, 401 without cookie, 401 without the `X-PIM-Sync` write header, 403 on cross-origin and preflight, same-origin acceptance, POST create, PUT update, SKU lookup, and the mock confirming server-side Basic auth and the mapped payload — with rejected requests never reaching the store.
-- The live path was then exercised against a **real local WooCommerce 11.2.1 store** (Local by Flywheel, HTTPS router URL, self-signed cert trusted for the current user) through the real dev proxy, using the app's own payload mapper: the proxy status reported `configured` with no URL error and issued its session cookie; a **create** produced a real draft product with the mapped category (*Apparel*, created as a term on demand), all four mapped attributes (Color/Size/Material/Finish), price ₹1234.00 and stock 7; an **update** changed name, price (₹1499.00) and stock (9) on the same product; a **SKU lookup** found the updated product. Findings along the way, all fixed: WooCommerce ignores name-only categories and untracked stock quantities (hence proxy-side category resolution and `manage_stock`), and WooCommerce 8+ only performs Basic auth over SSL (hence the HTTPS store URL).
-- Debugging that real store required two WordPress-host fixes, both made and verified outside this repo: the Local site's nginx config was missing `fastcgi_param HTTP_AUTHORIZATION $http_authorization;` (the Authorization header never reached PHP — added to both the rendered config and the site template), and the Local router certificate was trusted into the current user's Root store so `--use-system-ca` could verify it.
-- The **standalone `npm start` server** was probed directly: app shell and static assets 200, path traversal blocked, status configured from its own `.env.local`, 401 without cookie, 403 on OPTIONS, and a safe `proxy_network_error` when the store was down.
-- UI views passed **21 SSR smoke checks** (connection states: checking / unreachable / unconfigured / URL error / configured / insecure-local, demo-vs-live ledger split, mode-tagged catalog rows) via a temporary Vite SSR build (the harness strips React SSR comment separators before matching text). The dev server was also probed live: `/`, `/src/index.css`, `/favicon.svg` and `/api/woo/status` all returned 200.
+- **Mock store end-to-end** — 15/15 checks through the real dev proxy against a local mock WooCommerce API:
+  guards, cookie issuance, create, update, SKU lookup, server-side Basic auth, mapped payload.
+- **Real local store** — against WooCommerce 11.2.1 (Local by Flywheel): create (draft, ₹1234.00, stock 7,
+  mapped category + attributes), update (₹1499.00, stock 9), SKU lookup. A later headless-Edge pass drove the
+  real UI: seeded `KIL-2004` with a fake demo ID → live create → real id 15; re-sync → single
+  `PUT /products/15`; stale ID `987654321` → rejected → SKU lookup → `PUT /products/15`, no duplicate.
+- **Headless browser audits** — 11 viewport/theme configurations with zero horizontal overflow, and 16/16
+  checks with a scrambled mixed sync history: newest live success shown in every summary, a newer failed run
+  never replaces it, ledger chronological with mode badges intact.
 
-## Development workflow and AI tool usage
+## Hackathon videos
 
-I approached PIM Sync as an iterative solution to the hackathon brief: first map the requirements to a product catalog, attribute editor, and synchronisation workflow; then refine the implementation against automated checks and a real local WooCommerce test store.
+- **Planning video (2 min):** [Watch the planning video](https://drive.google.com/file/d/1PxMUoDoXDJUHSHFBLQuDfGQzIpo-Gm9f/view?usp=sharing)
+- **Result and product demo (2 min):** _Pending — not yet added. Add the result/demo video link (YouTube/Drive)
+  here before submission._
 
-### How I used development tools
+Both links must be accessible to reviewers. The result video should clearly distinguish simulated demo mode from
+the verified local WooCommerce live-sync test.
 
-- **Planning and scope:** structured the solution around the three challenge requirements — product catalog management, attribute handling, and data synchronisation — and kept simulated mode visibly separate from live-store operations.
-- **AI-assisted implementation:** used **OpenCode** as a coding assistant to help build and refine the React/Vite interface, product validation and persistence, the Node.js WooCommerce proxy, connection-state handling, tests, and documentation.
-- **Iteration and debugging:** used test results and local-store behaviour to identify integration issues. In particular, WooCommerce stock updates required `manage_stock: true`, and category names needed to be resolved to WooCommerce category term IDs. The implementation was updated to address both.
-- **Security-minded integration:** kept API credentials server-side in the ignored `.env.local` file, added request guards and HTTPS checks, and documented the local development setup. No credentials are included in this repository.
-- **Verification:** the reported checks include automated tests, linting, a production build, mock API checks, and a real local WooCommerce test-store run for product creation, update, attribute/category mapping, stock updates, and SKU lookup.
+## Limitations
 
-### Verification status and limitations
+- Single user, browser-only; no multi-user concurrency.
+- Live mode has been verified against a **local test store only — never production/remote**. It proves the
+  request shape, auth, routing, SKU/category/stock handling; it does not prove compatibility with every host,
+  plugin set or custom-field setup.
+- A static-only deployment needs `npm run build && npm start` (or an equivalent server route) to use live mode;
+  the proxy deliberately rejects cross-origin use.
+- Env changes require a server restart; **Check again** re-reads status but cannot pick up un-restarted changes.
+- Prices are in ₹ (INR); no tax or multi-currency logic. Demo Woo IDs are deterministic per SKU (stable, but
+  not real store IDs). No import/export, bulk editing or image handling.
 
-- **Automated tests:** 97 passing.
-- **Code quality:** lint clean; production build successful.
-- **Live integration:** verified against a local WooCommerce 11.2.1 test store through the application's server-side proxy.
-- **Not claimed:** production-store compatibility, public deployment, or a fully autonomous AI agent. The project uses AI-assisted development; the live integration has not been tested against a production or remote store.
+## AI usage
 
-OpenCode assisted with code generation, refactoring, debugging, test drafting, and documentation. AI-generated changes were iterated on in response to test failures and observed WooCommerce behaviour. This is an AI-assisted project, and the README distinguishes verified results from features or environments that have not been tested.
-
-## Connecting a real store (exact steps)
-
-1. In WooCommerce: **Settings → Advanced → REST API → Add key** — choose Read/Write permissions, generate, and copy
-   the Consumer key (`ck_…`) and Consumer secret (`cs_…`).
-2. In the project folder, create the env file:
-   `Copy-Item .env.example .env.local` (PowerShell) or `cp .env.example .env.local`.
-3. Fill in `WOO_STORE_URL=https://your-store.example` (must be HTTPS; HTTP is only allowed for local-development
-   hosts — `localhost`, `*.local`, `*.test`, private-network IPs — with `WOO_ALLOW_LOCAL_HTTP=1`), `WOO_CONSUMER_KEY=ck_…`, `WOO_CONSUMER_SECRET=cs_…`.
-4. **Restart the server** — env files are read at startup: stop it, then `npm run dev` (or `npm run build` +
-   `npm start` for the standalone server).
-5. Open **Synchronize**, select **Live store**, and press **Check again**; the panel should show
-   `Configured · <store host>` with credentials "Held server-side".
-6. Try one product on a **staging store first**. Watch the ledger: every live run is tagged `Live store` with the
-   upstream result or its safe error code.
-
-For a **local development store** (e.g. Local by Flywheel): use the store's **HTTPS** URL — WooCommerce 8+ only
-does Basic auth over SSL — and make sure the local certificate is trusted (`npm run dev` already runs Node with
-`--use-system-ca`; the `dev` script requires Node ≥ 22.15). If every request returns `woocommerce_rest_cannot_view`
-even with correct keys, check that the web server forwards the `Authorization` header to PHP (nginx sites may need
-`fastcgi_param HTTP_AUTHORIZATION $http_authorization;`).
-
-The live path has been verified against a local WooCommerce test store (see above) but never against a production
-or remote store — treat the first attempt there as a test, not a production operation.
-
-## Assumptions and limitations
-
-- Single user, browser-only; there is no backend beyond the sync proxy (Vite dev/preview middleware or the standalone `npm start` server), no auth between users and no multi-user concurrency.
-- A static-only production deployment needs the standalone server (`npm run build && npm start`) or an equivalent server route to use live mode; the hardened proxy deliberately rejects cross-origin use.
-- Remote stores must be HTTPS; plain HTTP is only accepted for local-development hosts (`localhost`, `*.local`, `*.test`, private-network IPs) with `WOO_ALLOW_LOCAL_HTTP=1` — a local-development escape hatch, never use it for a remote store.
-- Env files are read at server startup, so every `.env.local` change requires a restart; the UI's **Check again** re-reads the server status but cannot pick up un-restarted changes.
-- The live path has been run against a **local WooCommerce test store only** — never a production or remote store; the real-store pass does not prove compatibility with every host, plugin or custom-field setup.
-- Prices are displayed in ₹ (INR); no tax or multi-currency logic.
-- The sync log is capped at 50 entries; demo Woo IDs are deterministic per SKU, so they are stable but not real store IDs.
-- Seed data is illustrative; there is no import/export, bulk editing or image handling.
-- Credentials live in `.env.local` on the machine running the server — appropriate for a hackathon demo, not a hardened production setup (no rate limiting, no TLS termination of its own, no key rotation).
+Built with AI assistance (opencode) across several passes: design system and catalog, storage hardening,
+server-side credentials refactor, proxy hardening, standalone server, real-store connection, responsive/mobile
+polish, the live-sync stale-ID fix and the sync-status wording fix. All code was reviewed; **every command,
+count and store run reported in this README was executed in this repository — nothing is fabricated.** Browser
+checks were automated headless Edge sessions (Chrome DevTools Protocol) with disposable profiles. No deployment
+or store operations were performed beyond the local test store described above.
