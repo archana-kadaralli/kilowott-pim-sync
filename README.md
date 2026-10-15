@@ -204,24 +204,25 @@ Beyond unit tests:
 - The **standalone `npm start` server** was probed directly: app shell and static assets 200, path traversal blocked, status configured from its own `.env.local`, 401 without cookie, 403 on OPTIONS, and a safe `proxy_network_error` when the store was down.
 - UI views passed **21 SSR smoke checks** (connection states: checking / unreachable / unconfigured / URL error / configured / insecure-local, demo-vs-live ledger split, mode-tagged catalog rows) via a temporary Vite SSR build (the harness strips React SSR comment separators before matching text). The dev server was also probed live: `/`, `/src/index.css`, `/favicon.svg` and `/api/woo/status` all returned 200.
 
-## AI usage
+## Development approach & AI-assisted workflow
 
-This project was developed with AI assistance (opencode). What was AI-assisted and how it was verified:
+PIM Sync was developed as an iterative hackathon project around the three challenge requirements: product catalog management, attribute handling, and WooCommerce data synchronisation. The implementation was refined using test results and observations from a local WooCommerce store, rather than treating a successful UI render as proof that the integration worked.
 
-1. **Full visual redesign (earlier pass)** — AI replaced the previous ivory/vermilion sidebar layout with a bold editorial workspace: new top chrome (brand mark, tab navigation with counts, theme toggle), asymmetric mastheads, a manifest-style catalog table, restructured synchronize panels, an in-app delete confirmation dialog (replacing `window.confirm`), a full light/dark token system and an inline pre-paint theme script. Verified by 10 theme tests, clean lint, a successful production build, SSR smoke renders of the new views, live dev-server probes, and a manual pass over the rendered markup for class coverage.
-2. **Live-mode configuration UX (this pass)** — AI rewrote the synchronize connection panel around four explicit server states (checking / unreachable / unconfigured / configured) with the exact missing variables, exact setup commands, a required-restart note and a genuinely re-fetching **Check again** button; live run buttons now stay disabled with plain-English reasons until the server reports a valid configuration. Sync entries carry a `lastSyncMode` tag so the ledger, catalog and panels separate demo from live history (a blocked live attempt never records a run). Verified by 18 new/updated unit tests, 21 SSR smoke checks, and the mock-store end-to-end run.
-3. **Proxy security hardening (this pass)** — the sync proxy now enforces HTTPS for remote stores (`WOO_ALLOW_LOCAL_HTTP=1` only for localhost dev), issues an `HttpOnly`/`SameSite=Strict` session cookie from `/api/woo/status`, requires same-origin + cookie (+ `X-PIM-Sync` on writes) on product routes, rejects preflights and cross-origin calls with 403, times out upstream calls at 15 s and maps failures to safe error codes (503/504/502/403/401). AI also added a dependency-free standalone server (`server/index.mjs`, `npm start`) so the hardened proxy runs outside Vite in production. Verified by the rewritten 27-test middleware suite, the 15/15 mock end-to-end run, and direct standalone-server probes.
-4. **Accessibility in the redesign** — the theme toggle announces its target (`Switch to dark/light theme`), tabs use `aria-current`, the delete confirmation is a focus-managed `role="alertdialog"` whose safe action is focused first, and all motion is disabled under `prefers-reduced-motion`. Verified by code review and SSR renders, not by an automated a11y tool.
-5. **Server-side credentials refactor (earlier pass)** — AI moved WooCommerce credentials out of the browser into a dependency-free Node middleware (`server/woo-api.mjs`) wired into Vite dev + preview, rewrote the client connector to call `/api/woo/*`, and replaced the browser credential form with a secret-free status panel. Verified by middleware unit tests, the mock-store end-to-end run, lint, build, and SSR renders of all connection states.
-6. **Storage hardening** — AI rewrote `hydrateProduct`/log loading to repair or drop malformed `localStorage` data and added the legacy-credential purge. Verified by new tests covering null/primitive records, string prices, negative stock, unknown enums and broken attribute rows.
-7. **Code review of the existing implementation** — earlier AI review flagged edge cases (empty attribute rows ignored rather than erroring, case-insensitive SKU uniqueness, graceful swatch fallback, legacy record hydration); each is covered by a test.
-8. **Test generation** — the `node:test` suites were drafted with AI assistance. Two AI-drafted tests were wrong on first run (an empty-attribute expectation and an error-message regex) and were corrected; assertions were then read against the implementation before acceptance.
-9. **Design system, earlier pass** — the first editorial layout was drafted with AI assistance; the redesign supersedes it.
-10. **Real-store connection pass (this pass)** — AI connected the live path to a real local WooCommerce 11.2.1 store: extended the local-development host rules (`*.local`/`*.test`/private IPs) with tests, diagnosed the store's 401s to three causes (missing nginx `HTTP_AUTHORIZATION` param, WooCommerce's SSL-only Basic auth, category/stock semantics), fixed the app payload (`manage_stock`) and added proxy-side category resolution with four new unit tests, and ran a full create/update/SKU-lookup verification through the dev proxy. Verified by 97 passing tests, clean lint, a successful build, and the recorded real-store run above. Credentials live only in the gitignored `.env.local` and were never printed.
+### Project workflow
 
-AI did not run a browser interactively and performed no deployment or store operations beyond the local test
-store described above. No test results or agent activity in this README are fabricated — every command and
-count listed here was executed in this repository.
+- **Scope and product flow:** organised the app around a Product Catalog and a Synchronize workspace, with simulated demo mode clearly separated from live-store operations.
+- **Implementation:** used **OpenCode as an AI coding assistant** to help implement and refine the React/Vite interface, product validation and persistence, the Node.js WooCommerce proxy, connection-state handling, and automated tests.
+- **Integration debugging:** tested against a local WooCommerce store and addressed two issues found during verification: WooCommerce requires `manage_stock: true` for stock quantities to be managed, and category names must be resolved to WooCommerce category term IDs.
+- **Security and reliability:** refined server-side credential handling, HTTPS validation, same-origin protections, safe error responses, and local environment setup. Real credentials remain in the ignored `.env.local` file and are not included in this repository.
+- **Verification:** used automated tests, linting, a production build, mock API checks, and a real local WooCommerce test-store run to validate the implementation.
+
+### How AI tools were used
+
+OpenCode assisted with code drafting and refactoring, UI and theme implementation, code review, test generation, debugging the WooCommerce REST integration, and documentation. AI-generated changes were iterated on when tests or real-store behaviour exposed issues. The generated output was treated as something to inspect and verify, not as evidence that a feature worked by itself.
+
+The project reports **97 passing tests**, clean lint, and a successful production build. The live integration was verified against a **local WooCommerce 11.2.1 test store** for product creation, updates, stock/category/attribute mapping, and SKU lookup. It has **not** been tested against a production or remote store, and no deployment is claimed.
+
+This summary describes the project's AI-assisted workflow accurately: it does not claim every line was written manually, or that AI tools completed the work without human direction, iteration, and verification.
 
 ## Connecting a real store (exact steps)
 
