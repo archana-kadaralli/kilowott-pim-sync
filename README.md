@@ -190,11 +190,16 @@ the verified local WooCommerce live-sync test.
 - Prices are in ₹ (INR); no tax or multi-currency logic. Demo Woo IDs are deterministic per SKU (stable, but
   not real store IDs). No import/export, bulk editing or image handling.
 
-## AI usage
+## AI-assisted development
 
-Built with AI assistance (opencode) across several passes: design system and catalog, storage hardening,
-server-side credentials refactor, proxy hardening, standalone server, real-store connection, responsive/mobile
-polish, the live-sync stale-ID fix and the sync-status wording fix. All code was reviewed; **every command,
-count and store run reported in this README was executed in this repository — nothing is fabricated.** Browser
-checks were automated headless Edge sessions (Chrome DevTools Protocol) with disposable profiles. No deployment
-or store operations were performed beyond the local test store described above.
+I developed PIM Sync with AI coding assistance using OpenCode. I directed the implementation through the
+hackathon requirements, iterative improvements, debugging, and verification rather than treating generated
+code as automatically correct.
+
+My work focused on defining the project requirements, guiding the product catalog and WooCommerce integration,
+reviewing issues found during testing, verifying synchronization against a local WooCommerce test store, and
+checking the final changes with automated tests, linting, and production builds. AI assistance helped accelerate
+implementation; testing and verification were used to check that the application behaved as intended.
+
+The live integration has been verified against a local test store only. Remote production-store testing and
+public deployment have not been performed.
