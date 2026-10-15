@@ -171,8 +171,8 @@ Beyond unit tests (all executed; results recorded here):
 
 ## Hackathon videos
 
-- **Planning video (2 min):** [Watch the planning video](https://drive.google.com/file/d/1PxMUoDoXDJUHSHFBLQuDfGQzIpo-Gm9f/view?usp=sharing)
-- **Result and product demo (2 min):** [Watch the result/demo video](https://drive.google.com/file/d/1GeZCh6s6vLJQx-tdHgTVpMBhuxiX01Kd/view?usp=sharing)
+- **Planning video:** [Watch the planning video](https://drive.google.com/file/d/1PxMUoDoXDJUHSHFBLQuDfGQzIpo-Gm9f/view?usp=sharing)
+- **Result and product demo:** [Watch the result/demo video](https://drive.google.com/file/d/1GeZCh6s6vLJQx-tdHgTVpMBhuxiX01Kd/view?usp=sharing)
 
 Both videos should be accessible to reviewers. The result video distinguishes simulated demo mode from the verified
 local WooCommerce live-sync test.
