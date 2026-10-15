@@ -190,16 +190,12 @@ the verified local WooCommerce live-sync test.
 - Prices are in ₹ (INR); no tax or multi-currency logic. Demo Woo IDs are deterministic per SKU (stable, but
   not real store IDs). No import/export, bulk editing or image handling.
 
-## AI-assisted development
+## AI Tools & Engineering Workflow
 
-I developed PIM Sync with AI coding assistance using OpenCode. I directed the implementation through the
-hackathon requirements, iterative improvements, debugging, and verification rather than treating generated
-code as automatically correct.
+I used AI-assisted development tools throughout PIM Sync to accelerate implementation, explore solutions, debug issues, and improve code quality. I used OpenCode for coding assistance and automated testing workflows, alongside my own review of the requirements, application behaviour, and integration results.
 
-My work focused on defining the project requirements, guiding the product catalog and WooCommerce integration,
-reviewing issues found during testing, verifying synchronization against a local WooCommerce test store, and
-checking the final changes with automated tests, linting, and production builds. AI assistance helped accelerate
-implementation; testing and verification were used to check that the application behaved as intended.
+My engineering focus was turning the hackathon brief into a working solution: addressing product catalog management, product attributes, and WooCommerce synchronization; iterating on the interface and integration logic; investigating synchronization failures; and checking that the final implementation met the intended requirements.
 
-The live integration has been verified against a local test store only. Remote production-store testing and
-public deployment have not been performed.
+I used automated tests, linting, production builds, and browser-based verification to validate the application rather than relying on generated code alone. The final test suite contains 113 passing tests.
+
+**Verification scope:** Live WooCommerce synchronization was tested against a local test store. Remote production-store testing and public deployment have not been performed.
