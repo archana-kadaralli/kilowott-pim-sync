@@ -172,11 +172,10 @@ Beyond unit tests (all executed; results recorded here):
 ## Hackathon videos
 
 - **Planning video (2 min):** [Watch the planning video](https://drive.google.com/file/d/1PxMUoDoXDJUHSHFBLQuDfGQzIpo-Gm9f/view?usp=sharing)
-- **Result and product demo (2 min):** _Pending — not yet added. Add the result/demo video link (YouTube/Drive)
-  here before submission._
+- **Result and product demo (2 min):** [Watch the result/demo video](https://drive.google.com/file/d/1GeZCh6s6vLJQx-tdHgTVpMBhuxiX01Kd/view?usp=sharing)
 
-Both links must be accessible to reviewers. The result video should clearly distinguish simulated demo mode from
-the verified local WooCommerce live-sync test.
+Both videos should be accessible to reviewers. The result video distinguishes simulated demo mode from the verified
+local WooCommerce live-sync test.
 
 ## Limitations
 
