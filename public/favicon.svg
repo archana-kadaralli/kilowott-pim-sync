@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    rect.frame { stroke: #0d1220; }
+    path.arrow { stroke: #0d1220; }
+    rect.block { fill: #2337e0; }
+    @media (prefers-color-scheme: dark) {
+      rect.frame { stroke: #e9ebf2; }
+      path.arrow { stroke: #e9ebf2; }
+      rect.block { fill: #7d8cff; }
+    }
+  </style>
+  <rect class="frame" x="3" y="3" width="26" height="26" fill="none" stroke-width="2.4" />
+  <rect class="block" x="3" y="3" width="11" height="11" />
+  <path class="arrow" d="M18 21h8m0 0-3.6-3.6M26 21l-3.6 3.6" fill="none" stroke-width="2.4" stroke-linecap="square" />
+</svg>
