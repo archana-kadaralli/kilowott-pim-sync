@@ -1,7 +1,13 @@
 # PIM Sync
 
-A product information workspace built for the **Kilowott Hackathon 2026** with React + Vite. The first screen is a
-practical **Product Catalog**; a second **Synchronize** page handles the WooCommerce side.
+**PIM Sync** is a Product Information Management prototype built for the **Kilowott Hackathon 2026** using React,
+Vite, Node.js, and the WooCommerce REST API. It brings product data into one workspace and demonstrates a clear
+path from catalog editing to WooCommerce synchronisation.
+
+**Core challenge areas:** product catalog management · attribute handling · data synchronisation
+
+**Project status:** local WooCommerce integration verified · 97 automated tests passing · lint and production build passing.
+Live-store verification was performed on a local test store, not a production store.
 
 ## Problem
 
@@ -36,9 +42,14 @@ preference on first visit and remembers any manual choice; an inline pre-paint s
 Motion is disabled under `prefers-reduced-motion`; the table scrolls horizontally on narrow screens and the layout
 collapses cleanly at 1180 px, 980 px, 760 px and 560 px breakpoints.
 
-## Demo video
+## Hackathon videos
 
-> **Video walkthrough:** _placeholder — add the final demo video link (YouTube/Drive) here before submission._
+Add the final share links before submitting the hackathon form:
+
+- **Planning video (2 minutes):** _Add planning video link_
+- **Result and product demo (2 minutes):** _Add result video link_
+
+Make sure both links are accessible to reviewers. The result video should clearly distinguish simulated demo mode from the verified local WooCommerce live-sync test.
 
 ## Features
 
@@ -204,25 +215,26 @@ Beyond unit tests:
 - The **standalone `npm start` server** was probed directly: app shell and static assets 200, path traversal blocked, status configured from its own `.env.local`, 401 without cookie, 403 on OPTIONS, and a safe `proxy_network_error` when the store was down.
 - UI views passed **21 SSR smoke checks** (connection states: checking / unreachable / unconfigured / URL error / configured / insecure-local, demo-vs-live ledger split, mode-tagged catalog rows) via a temporary Vite SSR build (the harness strips React SSR comment separators before matching text). The dev server was also probed live: `/`, `/src/index.css`, `/favicon.svg` and `/api/woo/status` all returned 200.
 
-## Development approach & AI-assisted workflow
+## Development workflow and AI tool usage
 
-PIM Sync was developed as an iterative hackathon project around the three challenge requirements: product catalog management, attribute handling, and WooCommerce data synchronisation. The implementation was refined using test results and observations from a local WooCommerce store, rather than treating a successful UI render as proof that the integration worked.
+I approached PIM Sync as an iterative solution to the hackathon brief: first map the requirements to a product catalog, attribute editor, and synchronisation workflow; then refine the implementation against automated checks and a real local WooCommerce test store.
 
-### Project workflow
+### How I used development tools
 
-- **Scope and product flow:** organised the app around a Product Catalog and a Synchronize workspace, with simulated demo mode clearly separated from live-store operations.
-- **Implementation:** used **OpenCode as an AI coding assistant** to help implement and refine the React/Vite interface, product validation and persistence, the Node.js WooCommerce proxy, connection-state handling, and automated tests.
-- **Integration debugging:** tested against a local WooCommerce store and addressed two issues found during verification: WooCommerce requires `manage_stock: true` for stock quantities to be managed, and category names must be resolved to WooCommerce category term IDs.
-- **Security and reliability:** refined server-side credential handling, HTTPS validation, same-origin protections, safe error responses, and local environment setup. Real credentials remain in the ignored `.env.local` file and are not included in this repository.
-- **Verification:** used automated tests, linting, a production build, mock API checks, and a real local WooCommerce test-store run to validate the implementation.
+- **Planning and scope:** structured the solution around the three challenge requirements — product catalog management, attribute handling, and data synchronisation — and kept simulated mode visibly separate from live-store operations.
+- **AI-assisted implementation:** used **OpenCode** as a coding assistant to help build and refine the React/Vite interface, product validation and persistence, the Node.js WooCommerce proxy, connection-state handling, tests, and documentation.
+- **Iteration and debugging:** used test results and local-store behaviour to identify integration issues. In particular, WooCommerce stock updates required `manage_stock: true`, and category names needed to be resolved to WooCommerce category term IDs. The implementation was updated to address both.
+- **Security-minded integration:** kept API credentials server-side in the ignored `.env.local` file, added request guards and HTTPS checks, and documented the local development setup. No credentials are included in this repository.
+- **Verification:** the reported checks include automated tests, linting, a production build, mock API checks, and a real local WooCommerce test-store run for product creation, update, attribute/category mapping, stock updates, and SKU lookup.
 
-### How AI tools were used
+### Verification status and limitations
 
-OpenCode assisted with code drafting and refactoring, UI and theme implementation, code review, test generation, debugging the WooCommerce REST integration, and documentation. AI-generated changes were iterated on when tests or real-store behaviour exposed issues. The generated output was treated as something to inspect and verify, not as evidence that a feature worked by itself.
+- **Automated tests:** 97 passing.
+- **Code quality:** lint clean; production build successful.
+- **Live integration:** verified against a local WooCommerce 11.2.1 test store through the application's server-side proxy.
+- **Not claimed:** production-store compatibility, public deployment, or a fully autonomous AI agent. The project uses AI-assisted development; the live integration has not been tested against a production or remote store.
 
-The project reports **97 passing tests**, clean lint, and a successful production build. The live integration was verified against a **local WooCommerce 11.2.1 test store** for product creation, updates, stock/category/attribute mapping, and SKU lookup. It has **not** been tested against a production or remote store, and no deployment is claimed.
-
-This summary describes the project's AI-assisted workflow accurately: it does not claim every line was written manually, or that AI tools completed the work without human direction, iteration, and verification.
+OpenCode assisted with code generation, refactoring, debugging, test drafting, and documentation. AI-generated changes were iterated on in response to test failures and observed WooCommerce behaviour. This is an AI-assisted project, and the README distinguishes verified results from features or environments that have not been tested.
 
 ## Connecting a real store (exact steps)
 
